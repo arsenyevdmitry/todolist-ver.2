@@ -7,9 +7,11 @@ const TodoList = () => {
   const [newTodo, setNewTodo] = useState("")
   const [search, setSearch] = useState("")
   const [isSorted, setIsSorted] = useState(false)
+  const [editingTodoId, setEditingTodoId] = useState(null)
+  const [editingTodoTitle, setEditingTodoTitle] = useState("")
 
   const fetchTodos = () => {
-    fetch("http://localhost:5000/todos")
+    fetch("http://localhost:3000/todos")
       .then((response) => response.json())
       .then((data) => setTodos(data))
   }
@@ -20,7 +22,7 @@ const TodoList = () => {
 
   const addTodo = () => {
     if (newTodo) {
-      fetch("http://localhost:5000/todos", {
+      fetch("http://localhost:3000/todos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -36,9 +38,30 @@ const TodoList = () => {
   }
 
   const deleteTodo = (id) => {
-    fetch(`http://localhost:5000/todos/${id}`, {
+    fetch(`http://localhost:3000/todos/${id}`, {
       method: "DELETE",
     }).then(() => fetchTodos())
+  }
+
+  const startEditing = (todo) => {
+    setEditingTodoId(todo.id)
+    setEditingTodoTitle(todo.title)
+  }
+
+  const updateTodo = () => {
+    if (editingTodoTitle) {
+      fetch(`http://localhost:3000/todos/${editingTodoId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: editingTodoTitle }),
+      }).then(() => {
+        setEditingTodoId(null)
+        setEditingTodoTitle("")
+        fetchTodos()
+      })
+    }
   }
 
   const filteredTodos = todos.filter((todo) =>
@@ -77,13 +100,41 @@ const TodoList = () => {
       <ul>
         {sortedTodos.map((todo) => (
           <li key={todo.id} className={styles.todoItem}>
-            {todo.title}
-            <button
-              onClick={() => deleteTodo(todo.id)}
-              className={styles.deleteButton}
-            >
-              Удалить
-            </button>
+            {editingTodoId === todo.id ? (
+              <>
+                <input
+                  type="text"
+                  value={editingTodoTitle}
+                  onChange={(e) => setEditingTodoTitle(e.target.value)}
+                  className={styles.inputField}
+                />
+                <button onClick={updateTodo} className={styles.button}>
+                  Обновить
+                </button>
+                <button
+                  onClick={() => setEditingTodoId(null)}
+                  className={styles.button}
+                >
+                  Отменить
+                </button>
+              </>
+            ) : (
+              <>
+                {todo.title}
+                <button
+                  onClick={() => startEditing(todo)}
+                  className={styles.button}
+                >
+                  Изменить
+                </button>
+                <button
+                  onClick={() => deleteTodo(todo.id)}
+                  className={styles.deleteButton}
+                >
+                  Удалить
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>
